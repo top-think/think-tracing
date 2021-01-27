@@ -1,0 +1,34 @@
+{
+    "name": "topthink/think-tracing",
+    "description": "Distributed tracing for ThinkPHP made easy",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "yunwuxin",
+            "email": "448901948@qq.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "think\\tracing\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "think\\tracing\\tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": ">=7.1.0",
+        "topthink/framework": "^6.0",
+        "opentracing/opentracing": "^1.0",
+        "jcchavezs/zipkin-opentracing": "^1.0"
+    },
+    "extra": {
+        "think": {
+            "config": {
+                "tracing": "config/swoole.php"
+            }
+        }
+    }
+}
