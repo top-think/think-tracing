@@ -4,8 +4,12 @@ namespace think\tracing\middleware;
 
 use Closure;
 use think\Request;
+use think\Response;
 use think\tracing\Tracer;
-use const OpenTracing\Formats\HTTP_HEADERS;
+use const OpenTracing\Formats\TEXT_MAP;
+use const OpenTracing\Tags\HTTP_METHOD;
+use const OpenTracing\Tags\HTTP_STATUS_CODE;
+use const OpenTracing\Tags\HTTP_URL;
 
 class TraceRequests
 {
@@ -26,18 +30,29 @@ class TraceRequests
      */
     public function handle($request, Closure $next)
     {
-        $context = $this->tracer->extract(HTTP_HEADERS, $request->header());
+        $context = $this->tracer->extract(TEXT_MAP, $request->header());
 
         $scope = $this->tracer->startActiveSpan(
-            'http.' . strtolower($request->method()) . '.' . $request->url(),
-            ['child_of' => $context]
+            $request->baseUrl(),
+            [
+                'child_of' => $context,
+                'tags'     => [
+                    HTTP_METHOD => $request->method(),
+                    HTTP_URL    => $request->url(true),
+                ],
+            ]
         );
 
-        $response = $next($request);
+        try {
+            /** @var Response $response */
+            $response = $next($request);
 
-        $scope->close();
+            $scope->getSpan()->setTag(HTTP_STATUS_CODE, $response->getCode());
 
-        return $response;
+            return $response;
+        } finally {
+            $scope->close();
+        }
     }
 
     public function end()

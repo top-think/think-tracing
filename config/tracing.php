@@ -3,11 +3,9 @@ return [
     'default' => 'zipkin',
     'tracers' => [
         'zipkin' => [
-            'type'    => 'zipkin',
-            'host'    => 'localhost',
-            'port'    => 9411,
-            '128bit'  => false,
-            'options' => [],
+            'type'     => 'zipkin',
+            'endpoint' => 'http://localhost:9411/api/v2/spans',
+            '128bit'   => false,
         ],
     ],
 ];

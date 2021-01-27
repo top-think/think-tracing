@@ -45,15 +45,11 @@ class Tracer extends Manager
 
     protected function createZipkinDriver($name, $config)
     {
-        $endpoint = Endpoint::create(
-            $name,
-            Arr::get($config, 'host', 'localhost'),
-            null,
-            Arr::get($config, 'port', 9411)
-        );
-        $reporter = new Http(
-            Arr::get($config, 'options', [])
-        );
+        $endpoint = Endpoint::create($name, gethostbyname(gethostname()));
+
+        $reporter = new Http([
+            'endpoint_url' => Arr::get($config, 'endpoint'),
+        ]);
         $sampler  = BinarySampler::createAsAlwaysSample();
         $tracing  = TracingBuilder::create()
             ->havingLocalEndpoint($endpoint)
