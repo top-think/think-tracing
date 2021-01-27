@@ -27,7 +27,7 @@
     "extra": {
         "think": {
             "config": {
-                "tracing": "config/swoole.php"
+                "tracing": "config/tracing.php"
             }
         }
     }
