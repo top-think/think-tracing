@@ -3,8 +3,14 @@
 namespace think\tracing;
 
 use InvalidArgumentException;
+use Jaeger\Reporter\RemoteReporter;
+use Jaeger\Sampler\ConstSampler;
+use Jaeger\Sender\UdpSender;
+use Jaeger\Thrift\Agent\AgentClient;
 use think\helper\Arr;
 use think\Manager;
+use Thrift\Protocol\TCompactProtocol;
+use Thrift\Transport\TCurlClient;
 use Zipkin\Endpoint;
 use Zipkin\Reporters\Http;
 use Zipkin\Samplers\BinarySampler;
@@ -41,6 +47,29 @@ class Tracer extends Manager
     protected function resolveParams($name): array
     {
         return array_merge([$name], parent::resolveParams($name));
+    }
+
+    protected function createJaegerDriver($name, $config)
+    {
+        $endpoint  = parse_url(Arr::get($config, 'endpoint'));
+        $transport = new TCurlClient(
+            Arr::get($endpoint, 'host'),
+            Arr::get($endpoint, 'port', 80),
+            Arr::get($endpoint, 'path'),
+            Arr::get($endpoint, 'scheme')
+        );
+        $protocol  = new TCompactProtocol($transport);
+        $client    = new AgentClient($protocol);
+        $sender    = new UdpSender($client, $config['max_buffer_length'] ?? 64000);
+        $reporter  = new RemoteReporter($sender);
+
+        $sampler = new ConstSampler();
+
+        return new \Jaeger\Tracer(
+            $name,
+            $reporter,
+            $sampler
+        );
     }
 
     protected function createZipkinDriver($name, $config)

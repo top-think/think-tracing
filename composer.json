@@ -21,8 +21,15 @@
     "require": {
         "php": ">=7.1.0",
         "topthink/framework": "^6.0",
-        "opentracing/opentracing": "^1.0",
-        "jcchavezs/zipkin-opentracing": "^1.0"
+        "opentracing/opentracing": "^1.0"
+    },
+    "suggest": {
+        "jcchavezs/zipkin-opentracing": "zipkin",
+        "jonahgeorge/jaeger-client-php": "jaeger"
+    },
+    "require-dev": {
+        "jcchavezs/zipkin-opentracing": "^1.0",
+        "jonahgeorge/jaeger-client-php": "^1.0"
     },
     "extra": {
         "think": {
