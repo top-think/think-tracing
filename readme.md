@@ -5,6 +5,7 @@
 
 ### 支持两种驱动zipkin、jaeger 分别需要安装
 > composer require jcchavezs/zipkin-opentracing
+> 
 > composer require jonahgeorge/jaeger-client-php
 
 ## 使用
@@ -14,6 +15,7 @@
 
 ### 2. 异常处理
 > 仅供参考
+> 
 > 修改ExceptionHandler
 
 ```php
