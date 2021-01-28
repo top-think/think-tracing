@@ -7,10 +7,11 @@ use Jaeger\Reporter\RemoteReporter;
 use Jaeger\Sampler\ConstSampler;
 use Jaeger\Sender\UdpSender;
 use Jaeger\Thrift\Agent\AgentClient;
+use Jaeger\ThriftUdpTransport;
 use think\helper\Arr;
 use think\Manager;
 use Thrift\Protocol\TCompactProtocol;
-use Thrift\Transport\TCurlClient;
+use Thrift\Transport\TBufferedTransport;
 use Zipkin\Endpoint;
 use Zipkin\Reporters\Http;
 use Zipkin\Samplers\BinarySampler;
@@ -20,6 +21,7 @@ use Zipkin\TracingBuilder;
  * Class Tracer
  * @package think\tracing
  * @mixin \ZipkinOpenTracing\Tracer
+ * @mixin \Jaeger\Tracer
  */
 class Tracer extends Manager
 {
@@ -51,17 +53,20 @@ class Tracer extends Manager
 
     protected function createJaegerDriver($name, $config)
     {
-        $endpoint  = parse_url(Arr::get($config, 'endpoint'));
-        $transport = new TCurlClient(
-            Arr::get($endpoint, 'host'),
-            Arr::get($endpoint, 'port', 80),
-            Arr::get($endpoint, 'path'),
-            Arr::get($endpoint, 'scheme')
+        $udp             = new ThriftUdpTransport(
+            Arr::get($config, 'host', 'localhost'),
+            Arr::get($config, 'port', 5775)
         );
-        $protocol  = new TCompactProtocol($transport);
-        $client    = new AgentClient($protocol);
-        $sender    = new UdpSender($client, $config['max_buffer_length'] ?? 64000);
-        $reporter  = new RemoteReporter($sender);
+        $maxBufferLength = Arr::get($config, 'max_buffer_length', 6400);
+        $transport       = new TBufferedTransport($udp, $maxBufferLength, $maxBufferLength);
+        $transport->open();
+
+        $protocol = new TCompactProtocol($transport);
+        $client   = new AgentClient($protocol);
+
+        $sender = new UdpSender($client, $maxBufferLength);
+
+        $reporter = new RemoteReporter($sender);
 
         $sampler = new ConstSampler();
 
