@@ -8,6 +8,9 @@ use Jaeger\Sampler\ConstSampler;
 use Jaeger\Sender\UdpSender;
 use Jaeger\Thrift\Agent\AgentClient;
 use Jaeger\ThriftUdpTransport;
+use OpenTracing\Scope;
+use OpenTracing\ScopeManager;
+use OpenTracing\Span;
 use OpenTracing\SpanContext as OTSpanContext;
 use think\helper\Arr;
 use think\Manager;
@@ -21,10 +24,8 @@ use Zipkin\TracingBuilder;
 /**
  * Class Tracer
  * @package think\tracing
- * @mixin \ZipkinOpenTracing\Tracer
- * @mixin \Jaeger\Tracer
  */
-class Tracer extends Manager
+class Tracer extends Manager implements \OpenTracing\Tracer
 {
 
     /**
@@ -135,14 +136,38 @@ class Tracer extends Manager
         return $this->getConfig('default');
     }
 
-    /**
-     * 传递引用
-     * @param OTSpanContext $spanContext
-     * @param string $format
-     * @param $carrier
-     */
     public function inject(OTSpanContext $spanContext, string $format, &$carrier): void
     {
         $this->tracer()->inject($spanContext, $format, $carrier);
+    }
+
+    public function getScopeManager(): ScopeManager
+    {
+        return $this->tracer()->getScopeManager();
+    }
+
+    public function getActiveSpan(): ?Span
+    {
+        return $this->tracer()->getActiveSpan();
+    }
+
+    public function startActiveSpan(string $operationName, $options = []): Scope
+    {
+        return $this->tracer()->startActiveSpan($operationName, $options);
+    }
+
+    public function startSpan(string $operationName, $options = []): Span
+    {
+        return $this->tracer()->startSpan($operationName, $options);
+    }
+
+    public function extract(string $format, $carrier): ?OTSpanContext
+    {
+        return $this->tracer()->extract($format, $carrier);
+    }
+
+    public function flush(): void
+    {
+        $this->tracer()->flush();
     }
 }
