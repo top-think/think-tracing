@@ -8,6 +8,7 @@ use Jaeger\Sampler\ConstSampler;
 use Jaeger\Sender\UdpSender;
 use Jaeger\Thrift\Agent\AgentClient;
 use Jaeger\ThriftUdpTransport;
+use OpenTracing\SpanContext as OTSpanContext;
 use think\helper\Arr;
 use think\Manager;
 use Thrift\Protocol\TCompactProtocol;
@@ -111,6 +112,15 @@ class Tracer extends Manager
         throw new InvalidArgumentException("Tracer [$tracer] not found.");
     }
 
+    /**
+     * @param null $name
+     * @return \OpenTracing\Tracer
+     */
+    public function tracer($name = null)
+    {
+        return $this->driver($name);
+    }
+
     protected function resolveType(string $name)
     {
         return $this->getTracerConfig($name, 'type', 'zipkin');
@@ -123,5 +133,16 @@ class Tracer extends Manager
     public function getDefaultDriver()
     {
         return $this->getConfig('default');
+    }
+
+    /**
+     * 传递引用
+     * @param OTSpanContext $spanContext
+     * @param string $format
+     * @param $carrier
+     */
+    public function inject(OTSpanContext $spanContext, string $format, &$carrier): void
+    {
+        $this->tracer()->inject($spanContext, $format, $carrier);
     }
 }
