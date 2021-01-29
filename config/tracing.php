@@ -11,4 +11,5 @@ return [
             'endpoint' => 'http://localhost:9411/api/v2/spans',
         ],
     ],
+    'errors'  => true,
 ];

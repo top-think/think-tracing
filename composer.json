@@ -33,6 +33,9 @@
     },
     "extra": {
         "think": {
+            "services": [
+                "think\\tracing\\Service"
+            ],
             "config": {
                 "tracing": "config/tracing.php"
             }

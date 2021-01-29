@@ -30,7 +30,7 @@ class TraceRequests
     public function handle($request, Closure $next)
     {
         $scope = $this->tracer->startActiveSpan(
-            $request->baseUrl(),
+            "http:" . $request->baseUrl(),
             [
                 'tags' => [
                     HTTP_METHOD => $request->method(),
