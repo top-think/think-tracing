@@ -3,6 +3,7 @@
 namespace think\tracing;
 
 use think\event\LogRecord;
+use const OpenTracing\Tags\DATABASE_STATEMENT;
 use const OpenTracing\Tags\ERROR;
 
 class Service extends \think\Service
@@ -16,6 +17,23 @@ class Service extends \think\Service
                     if ($span) {
                         $span->setTag(ERROR, $event->message);
                     }
+                }
+            });
+        }
+
+        if ($this->app->config->get('tracing.sql', false)) {
+            $this->app->db->listen(function ($sql, $time) {
+                if (0 !== strpos($sql, 'CONNECT:')) {
+                    /** @var Tracer $tracer */
+                    $tracer = app(Tracer::class);
+
+                    $span = $tracer->startSpan('db_query', [
+                        'start_time' => (int) ((microtime(true) - $time) * 1000 * 1000),
+                    ]);
+
+                    $span->setTag(DATABASE_STATEMENT, $sql);
+
+                    $span->finish();
                 }
             });
         }

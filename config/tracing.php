@@ -12,4 +12,5 @@ return [
         ],
     ],
     'errors'  => true,
+    'sql'     => true,
 ];
