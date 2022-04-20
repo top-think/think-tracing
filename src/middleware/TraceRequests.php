@@ -6,6 +6,7 @@ use Closure;
 use think\Request;
 use think\Response;
 use think\tracing\Tracer;
+use const OpenTracing\Formats\TEXT_MAP;
 use const OpenTracing\Tags\HTTP_METHOD;
 use const OpenTracing\Tags\HTTP_STATUS_CODE;
 use const OpenTracing\Tags\HTTP_URL;
@@ -25,16 +26,20 @@ class TraceRequests
     /**
      * @param Request $request
      * @param Closure $next
-     * @return mixed
+     * @return Response
      */
     public function handle($request, Closure $next)
     {
+        $context = $this->tracer->extract(TEXT_MAP, $request->header());
+
         $scope = $this->tracer->startActiveSpan(
             "http:" . $request->baseUrl(),
             [
-                'tags' => [
+                'child_of' => $context,
+                'tags'     => [
                     HTTP_METHOD => $request->method(),
                     HTTP_URL    => $request->url(true),
+                    'http.ip'   => $request->ip(),
                 ],
             ]
         );
@@ -43,9 +48,15 @@ class TraceRequests
             /** @var Response $response */
             $response = $next($request);
 
-            $scope->getSpan()->setTag(HTTP_STATUS_CODE, $response->getCode());
+            $span = $scope->getSpan();
 
-            return $response;
+            $span->setTag(HTTP_STATUS_CODE, $response->getCode());
+
+            $headers = [];
+
+            $this->tracer->inject($span->getContext(), TEXT_MAP, $headers);
+
+            return $response->header($headers);
         } finally {
             $scope->close();
         }
