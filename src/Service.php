@@ -3,6 +3,7 @@
 namespace think\tracing;
 
 use think\event\LogRecord;
+use think\tracing\command\Report;
 use const OpenTracing\Tags\DATABASE_STATEMENT;
 use const OpenTracing\Tags\ERROR;
 
@@ -10,6 +11,10 @@ class Service extends \think\Service
 {
     public function boot(): void
     {
+        $this->commands([
+            Report::class,
+        ]);
+
         if ($this->app->config->get('tracing.errors', false)) {
             $this->app->event->listen(LogRecord::class, function (Tracer $tracer, LogRecord $event) {
                 if ($event->type == 'error') {

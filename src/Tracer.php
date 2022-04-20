@@ -3,23 +3,10 @@
 namespace think\tracing;
 
 use InvalidArgumentException;
-use Jaeger\Reporter\RemoteReporter;
-use Jaeger\Sampler\ConstSampler;
-use Jaeger\Sender\UdpSender;
-use Jaeger\Thrift\Agent\AgentClient;
-use Jaeger\ThriftUdpTransport;
-use OpenTracing\Scope;
-use OpenTracing\ScopeManager;
-use OpenTracing\Span;
-use OpenTracing\SpanContext as OTSpanContext;
 use think\helper\Arr;
 use think\Manager;
-use Thrift\Protocol\TCompactProtocol;
-use Thrift\Transport\TBufferedTransport;
-use Zipkin\Endpoint;
-use Zipkin\Reporters\Http;
-use Zipkin\Samplers\BinarySampler;
-use Zipkin\TracingBuilder;
+use think\tracing\reporter\RedisReporter;
+use think\tracing\tracer\Driver;
 
 /**
  * Class Tracer
@@ -27,6 +14,9 @@ use Zipkin\TracingBuilder;
  */
 class Tracer extends Manager implements \OpenTracing\Tracer
 {
+    use InteractsWithTracer;
+
+    protected $namespace = '\\think\\tracing\\tracer\\';
 
     /**
      * 获取配置
@@ -53,48 +43,28 @@ class Tracer extends Manager implements \OpenTracing\Tracer
         return array_merge([$name], parent::resolveParams($name));
     }
 
-    protected function createJaegerDriver($name, $config)
+    protected function createDriver(string $name)
     {
-        $udp             = new ThriftUdpTransport(
-            Arr::get($config, 'host', 'localhost'),
-            Arr::get($config, 'port', 5775)
-        );
-        $maxBufferLength = Arr::get($config, 'max_buffer_length', 6400);
-        $transport       = new TBufferedTransport($udp, $maxBufferLength, $maxBufferLength);
-        $transport->open();
+        /** @var Driver $driver */
+        $driver = parent::createDriver($name);
 
-        $protocol = new TCompactProtocol($transport);
-        $client   = new AgentClient($protocol);
+        $async = $this->getTracerConfig($name, 'async', false);
 
-        $sender = new UdpSender($client, $maxBufferLength);
+        if ($async) {
+            $driver->setRedisReporter($this->createRedisReporter($name));
+        }
 
-        $reporter = new RemoteReporter($sender);
-
-        $sampler = new ConstSampler();
-
-        return new \Jaeger\Tracer(
-            $name,
-            $reporter,
-            $sampler
-        );
+        return $driver;
     }
 
-    protected function createZipkinDriver($name, $config)
+    /**
+     * @param $name
+     * @return RedisReporter
+     */
+    protected function createRedisReporter($name)
     {
-        $endpoint = Endpoint::create($name, gethostbyname(gethostname()));
-
-        $reporter = new Http([
-            'endpoint_url' => Arr::get($config, 'endpoint'),
-        ]);
-        $sampler  = BinarySampler::createAsAlwaysSample();
-        $tracing  = TracingBuilder::create()
-            ->havingLocalEndpoint($endpoint)
-            ->havingTraceId128bits(Arr::get($config, '128bit', false))
-            ->havingSampler($sampler)
-            ->havingReporter($reporter)
-            ->build();
-
-        return new \ZipkinOpenTracing\Tracer($tracing);
+        $config = $this->getConfig('redis', []);
+        return $this->app->make(RedisReporter::class, [$name, $config]);
     }
 
     /**
@@ -102,7 +72,7 @@ class Tracer extends Manager implements \OpenTracing\Tracer
      * @param string $tracer
      * @param string|null $name
      * @param null $default
-     * @return array
+     * @return mixed
      */
     public function getTracerConfig(string $tracer, string $name = null, $default = null)
     {
@@ -115,7 +85,7 @@ class Tracer extends Manager implements \OpenTracing\Tracer
 
     /**
      * @param null $name
-     * @return \OpenTracing\Tracer
+     * @return Driver
      */
     public function tracer($name = null)
     {
@@ -136,38 +106,4 @@ class Tracer extends Manager implements \OpenTracing\Tracer
         return $this->getConfig('default');
     }
 
-    public function inject(OTSpanContext $spanContext, string $format, &$carrier): void
-    {
-        $this->tracer()->inject($spanContext, $format, $carrier);
-    }
-
-    public function getScopeManager(): ScopeManager
-    {
-        return $this->tracer()->getScopeManager();
-    }
-
-    public function getActiveSpan(): ?Span
-    {
-        return $this->tracer()->getActiveSpan();
-    }
-
-    public function startActiveSpan(string $operationName, $options = []): Scope
-    {
-        return $this->tracer()->startActiveSpan($operationName, $options);
-    }
-
-    public function startSpan(string $operationName, $options = []): Span
-    {
-        return $this->tracer()->startSpan($operationName, $options);
-    }
-
-    public function extract(string $format, $carrier): ?OTSpanContext
-    {
-        return $this->tracer()->extract($format, $carrier);
-    }
-
-    public function flush(): void
-    {
-        $this->tracer()->flush();
-    }
 }

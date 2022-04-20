@@ -15,6 +15,9 @@
 ### 2. 错误处理
 > 使用了中间件后，该组件默认会跟踪到错误  
 > 配置文件里errors设置为false可以关闭
-> 
+>
 
-### 3. 其他使用方法参考 [opentracing](https://github.com/opentracing/opentracing-php)
+### 3.异步上报数据
+> 配置`async`,数据临时存储到redis,单独起一个进程`php think tracing:report`来上报数据
+
+### 4. 其他使用方法参考 [opentracing](https://github.com/opentracing/opentracing-php)
