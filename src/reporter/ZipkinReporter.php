@@ -26,19 +26,26 @@ class ZipkinReporter implements Reporter, AsyncReporter
 
     public function report(array $spans): void
     {
-        $this->reporter->push($this->serializer->serialize($spans));
+        $this->reporter->push(serialize($spans));
     }
 
     public function flush()
     {
         $client = $this->clientFactory->build($this->options);
 
-        while ($payload = $this->reporter->pop()) {
+        while (true) {
+            $list  = $this->reporter->pop();
+            $spans = array_reduce($list, function ($carry, $item) {
+                return array_merge($carry, unserialize($item));
+            }, []);
+
+            $payload = $this->serializer->serialize($spans);
             try {
                 $client($payload);
             } catch (RuntimeException $e) {
 
             }
+            sleep(5);
         }
     }
 }

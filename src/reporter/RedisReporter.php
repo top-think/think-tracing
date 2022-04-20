@@ -9,17 +9,6 @@ use think\helper\Str;
 
 class RedisReporter
 {
-    protected $options = [
-        'host'       => '127.0.0.1',
-        'port'       => 6379,
-        'password'   => '',
-        'select'     => 0,
-        'timeout'    => 0,
-        'expire'     => 0,
-        'persistent' => false,
-        'prefix'     => '',
-    ];
-
     protected $name;
 
     /** @var Redis */
@@ -43,7 +32,15 @@ class RedisReporter
 
             public function __construct($config)
             {
-                $this->config = $config;
+                $this->config = array_merge([
+                    'persistent' => true,
+                    'host'       => 'localhost',
+                    'port'       => 6379,
+                    'timeout'    => 0,
+                    'password'   => '',
+                    'select'     => 0,
+                ], $config);
+
                 $this->client = $this->createClient();
             }
 
@@ -89,12 +86,20 @@ class RedisReporter
 
     public function push(string $spans)
     {
-        $this->redis->lPush($this->key(), $spans);
+        $this->redis->rPush($this->key(), $spans);
     }
 
     public function pop()
     {
-        [, $spans] = $this->redis->brPop($this->key(), 0);
-        return $spans;
+        $key = $this->key();
+
+        $count = $this->redis->lLen($key);
+
+        if ($count > 0) {
+            $end = min(50, $count) - 1;
+            [$list] = $this->redis->multi()->lRange($key, 0, $end)->lTrim($key, $end + 1, -1)->exec();
+            return $list;
+        }
+        return [];
     }
 }
