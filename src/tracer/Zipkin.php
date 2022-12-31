@@ -2,6 +2,7 @@
 
 namespace think\tracing\tracer;
 
+use OpenTracing\Tracer as OTTracer;
 use think\helper\Arr;
 use think\tracing\reporter\ZipkinReporter;
 use Zipkin\Endpoint;
@@ -25,7 +26,7 @@ class Zipkin extends Driver
         return new Http($options);
     }
 
-    protected function createTracer()
+    protected function createTracer(): OTTracer
     {
         $reporter = $this->createReporter();
 

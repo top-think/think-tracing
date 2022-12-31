@@ -10,6 +10,7 @@ use Jaeger\ThriftUdpTransport;
 use think\helper\Arr;
 use Thrift\Protocol\TCompactProtocol;
 use Thrift\Transport\TBufferedTransport;
+use OpenTracing\Tracer as OTTracer;
 
 class Jaeger extends Driver
 {
@@ -32,7 +33,7 @@ class Jaeger extends Driver
         return new RemoteReporter($sender);
     }
 
-    protected function createTracer()
+    protected function createTracer(): OTTracer
     {
         $reporter = $this->createReporter();
         $sampler  = new ConstSampler();

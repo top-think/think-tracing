@@ -5,8 +5,9 @@ namespace think\tracing\tracer;
 use think\tracing\InteractsWithTracer;
 use think\tracing\reporter\AsyncReporter;
 use think\tracing\reporter\RedisReporter;
+use OpenTracing\Tracer as OTTracer;
 
-abstract class Driver implements \OpenTracing\Tracer
+abstract class Driver implements OTTracer
 {
     use InteractsWithTracer;
 
@@ -31,7 +32,7 @@ abstract class Driver implements \OpenTracing\Tracer
 
     abstract protected function createReporter();
 
-    abstract protected function createTracer();
+    abstract protected function createTracer(): OTTracer;
 
     protected function tracer()
     {

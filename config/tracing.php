@@ -1,7 +1,10 @@
 <?php
 return [
-    'default' => 'zipkin',
+    'default' => 'noop',
     'tracers' => [
+        'noop'   => [
+            'type' => 'noop',
+        ],
         'jaeger' => [
             'type'     => 'jaeger',
             'endpoint' => 'http://localhost:9411/api/traces',
