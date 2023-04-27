@@ -33,12 +33,9 @@ class RedisReporter
             public function __construct($config)
             {
                 $this->config = array_merge([
-                    'persistent' => true,
-                    'host'       => 'localhost',
-                    'port'       => 6379,
-                    'timeout'    => 0,
-                    'password'   => '',
-                    'select'     => 0,
+                    'host'    => 'localhost',
+                    'port'    => 6379,
+                    'timeout' => 10,
                 ], $config);
 
                 $this->client = $this->createClient();
@@ -47,18 +44,25 @@ class RedisReporter
             protected function createClient()
             {
                 $config = $this->config;
-                $func   = $config['persistent'] ? 'pconnect' : 'connect';
 
                 $client = new Redis;
-                $client->$func($config['host'], $config['port'], $config['timeout']);
+                $ret    = $client->connect($config['host'], $config['port'], $config['timeout']);
 
-                if ('' != $config['password']) {
-                    $client->auth($config['password']);
+                if ($ret === false) {
+                    throw new \RuntimeException(sprintf('Failed to connect Redis server: %s', $client->getLastError()));
                 }
 
-                if (0 != $config['select']) {
-                    $client->select($config['select']);
+                if (isset($config['password'])) {
+                    $config['password'] = (string) $config['password'];
+                    if ($config['password'] !== '') {
+                        $client->auth($config['password']);
+                    }
                 }
+
+                if (isset($config['database'])) {
+                    $client->select($config['database']);
+                }
+
                 return $client;
             }
 
