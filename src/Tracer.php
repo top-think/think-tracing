@@ -40,7 +40,7 @@ class Tracer extends Manager implements \OpenTracing\Tracer
 
     protected function resolveParams($name): array
     {
-        return array_merge([$name], parent::resolveParams($name));
+        return array_merge([$this->getTracerConfig($name, 'name', $name)], parent::resolveParams($name));
     }
 
     protected function createDriver(string $name)
