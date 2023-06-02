@@ -2,14 +2,12 @@
 
 namespace think\tracing\reporter;
 
-use RuntimeException;
+use Exception;
 use Zipkin\Reporter;
-use Zipkin\Reporters\Http\CurlFactory;
 use Zipkin\Reporters\JsonV2Serializer;
 
 class ZipkinReporter implements Reporter, AsyncReporter
 {
-
     protected $reporter;
     protected $serializer;
     protected $clientFactory;
@@ -20,13 +18,13 @@ class ZipkinReporter implements Reporter, AsyncReporter
     {
         $this->reporter      = $reporter;
         $this->serializer    = new JsonV2Serializer();
-        $this->clientFactory = CurlFactory::create();
+        $this->clientFactory = HttpClientFactory::create();
         $this->options       = $options;
     }
 
     public function report(array $spans): void
     {
-        $this->reporter->push(serialize($spans));
+        $this->reporter->push($this->serializer->serialize($spans));
     }
 
     public function flush()
@@ -34,18 +32,15 @@ class ZipkinReporter implements Reporter, AsyncReporter
         $client = $this->clientFactory->build($this->options);
 
         while (true) {
-            $list  = $this->reporter->pop();
-            $spans = array_reduce($list, function ($carry, $item) {
-                return array_merge($carry, unserialize($item));
-            }, []);
-
-            $payload = $this->serializer->serialize($spans);
-            try {
-                $client($payload);
-            } catch (RuntimeException $e) {
-
+            $spans = $this->reporter->pop();
+            if (!empty($spans)) {
+                try {
+                    $client($spans);
+                } catch (Exception $e) {
+                }
+            } else {
+                sleep(5);
             }
-            sleep(5);
         }
     }
 }

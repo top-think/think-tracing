@@ -95,15 +95,6 @@ class RedisReporter
 
     public function pop()
     {
-        $key = $this->key();
-
-        $count = $this->redis->lLen($key);
-
-        if ($count > 0) {
-            $end = min(50, $count) - 1;
-            [$list] = $this->redis->multi()->lRange($key, 0, $end)->lTrim($key, $end + 1, -1)->exec();
-            return $list;
-        }
-        return [];
+        return $this->redis->lPop($this->key());
     }
 }
