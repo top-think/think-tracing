@@ -37,6 +37,7 @@ class ZipkinReporter implements Reporter, AsyncReporter
                 try {
                     $client($spans);
                 } catch (Exception $e) {
+                    trace($e->getMessage(), 'error');
                 }
             } else {
                 sleep(5);
