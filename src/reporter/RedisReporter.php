@@ -90,7 +90,9 @@ class RedisReporter
 
     public function push(string $spans)
     {
-        $this->redis->rPush($this->key(), $spans);
+        $result = $this->redis->rPush($this->key(), $spans);
+
+        trace($spans . '::' . $result, 'push');
     }
 
     public function pop()
