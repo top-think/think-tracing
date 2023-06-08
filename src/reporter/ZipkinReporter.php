@@ -34,11 +34,10 @@ class ZipkinReporter implements Reporter, AsyncReporter
         while (true) {
             $spans = $this->reporter->pop();
             if (!empty($spans)) {
-                trace($spans, 'info');
                 try {
                     $client($spans);
                 } catch (Exception $e) {
-                    trace($e->getMessage(), 'error');
+                    $this->reporter->push($spans);
                 }
             } else {
                 sleep(5);
