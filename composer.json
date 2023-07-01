@@ -20,7 +20,7 @@
     },
     "require": {
         "php": ">=7.1.0",
-        "topthink/framework": "^6.0",
+        "topthink/framework": "^6.0 || ^8.0",
         "opentracing/opentracing": "^1.0",
         "guzzlehttp/guzzle": "^7.0"
     },
@@ -40,6 +40,14 @@
             "config": {
                 "tracing": "config/tracing.php"
             }
+        }
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "platform-check": false,
+        "platform": {
+            "ext-sockets": "1"
         }
     }
 }
