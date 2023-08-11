@@ -40,7 +40,7 @@ class TraceRequests
                     HTTP_METHOD   => $request->method(),
                     HTTP_URL      => $request->baseUrl(true),
                     'http.ip'     => $request->ip(),
-                    'http.params' => json_encode($request->param()),
+                    'http.params' => json_encode($request->param(), JSON_ERROR_NONE | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
                 ],
             ]
         );
