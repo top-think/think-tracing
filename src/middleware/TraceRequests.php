@@ -37,9 +37,10 @@ class TraceRequests
             [
                 'child_of' => $context,
                 'tags'     => [
-                    HTTP_METHOD => $request->method(),
-                    HTTP_URL    => $request->url(true),
-                    'http.ip'   => $request->ip(),
+                    HTTP_METHOD   => $request->method(),
+                    HTTP_URL      => $request->baseUrl(true),
+                    'http.ip'     => $request->ip(),
+                    'http.params' => json_encode($request->param()),
                 ],
             ]
         );
