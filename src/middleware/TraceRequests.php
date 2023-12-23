@@ -18,6 +18,9 @@ class TraceRequests
      */
     protected $tracer;
 
+    /** @var \OpenTracing\Scope */
+    protected $scope;
+
     public function __construct(Tracer $tracer)
     {
         $this->tracer = $tracer;
@@ -32,7 +35,7 @@ class TraceRequests
     {
         $context = $this->tracer->extract(TEXT_MAP, $request->header());
 
-        $scope = $this->tracer->startActiveSpan(
+        $this->scope = $this->tracer->startActiveSpan(
             "http:" . $request->baseUrl(),
             [
                 'child_of' => $context,
@@ -45,26 +48,25 @@ class TraceRequests
             ]
         );
 
-        try {
-            /** @var Response $response */
-            $response = $next($request);
+        /** @var Response $response */
+        $response = $next($request);
 
-            $span = $scope->getSpan();
+        $span = $this->scope->getSpan();
 
-            $span->setTag(HTTP_STATUS_CODE, $response->getCode());
+        $span->setTag(HTTP_STATUS_CODE, $response->getCode());
 
-            $headers = [];
+        $headers = [];
 
-            $this->tracer->inject($span->getContext(), TEXT_MAP, $headers);
+        $this->tracer->inject($span->getContext(), TEXT_MAP, $headers);
 
-            return $response->header($headers);
-        } finally {
-            $scope->close();
-        }
+        return $response->header($headers);
     }
 
     public function end()
     {
+        if ($this->scope) {
+            $this->scope->close();
+        }
         $this->tracer->flush();
     }
 
