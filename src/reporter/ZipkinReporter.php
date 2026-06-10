@@ -3,6 +3,7 @@
 namespace think\tracing\reporter;
 
 use Exception;
+use Throwable;
 use Zipkin\Reporter;
 use Zipkin\Reporters\JsonV2Serializer;
 
@@ -32,15 +33,19 @@ class ZipkinReporter implements Reporter, AsyncReporter
         $client = $this->clientFactory->build($this->options);
 
         while (true) {
-            $spans = $this->reporter->pop();
-            if (!empty($spans)) {
-                try {
-                    $client($spans);
-                } catch (Exception $e) {
-                    $this->reporter->push($spans);
+            try {
+                $payload = $this->reporter->pop();
+                if (!empty($payload)) {
+                    try {
+                        $client($payload);
+                    } catch (Exception $e) {
+                        $this->reporter->push($payload);
+                    }
+                } else {
+                    sleep(3);
                 }
-            } else {
-                sleep(5);
+            } catch (Throwable $e) {
+                sleep(3);
             }
         }
     }
