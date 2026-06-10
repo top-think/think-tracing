@@ -21,10 +21,10 @@ class Tracer extends Manager implements \OpenTracing\Tracer
     /**
      * 获取配置
      * @param null|string $name 名称
-     * @param null|string $default 默认值
+     * @param mixed $default 默认值
      * @return mixed
      */
-    public function getConfig(?string $name = null, ?string $default = null)
+    public function getConfig(?string $name = null, $default = null)
     {
         if (!is_null($name)) {
             return $this->app->config->get('tracing.' . $name, $default);
@@ -71,10 +71,10 @@ class Tracer extends Manager implements \OpenTracing\Tracer
      * 获取驱动配置
      * @param string $tracer
      * @param string|null $name
-     * @param string|null $default
+     * @param mixed $default
      * @return mixed
      */
-    public function getTracerConfig(string $tracer, ?string $name = null, ?string $default = null)
+    public function getTracerConfig(string $tracer, ?string $name = null, $default = null)
     {
         if ($config = $this->getConfig("tracers.{$tracer}")) {
             return Arr::get($config, $name, $default);
