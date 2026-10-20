@@ -32,6 +32,10 @@ class Service extends \think\Service
                     /** @var Tracer $tracer */
                     $tracer = app(Tracer::class);
 
+                    if (null === $tracer->getActiveSpan()) {
+                        return;
+                    }
+
                     $span = $tracer->startSpan('db_query', [
                         'start_time' => (int) ((microtime(true) - $time) * 1000 * 1000),
                     ]);
