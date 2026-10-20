@@ -37,8 +37,6 @@ class RedisReporter
                     'port'    => 6379,
                     'timeout' => 10,
                 ], $config);
-
-                $this->client = $this->createClient();
             }
 
             protected function createClient()
@@ -66,10 +64,19 @@ class RedisReporter
                 return $client;
             }
 
+            protected function client()
+            {
+                if ($this->client === null) {
+                    $this->client = $this->createClient();
+                }
+
+                return $this->client;
+            }
+
             public function __call($name, $arguments)
             {
                 try {
-                    return call_user_func_array([$this->client, $name], $arguments);
+                    return call_user_func_array([$this->client(), $name], $arguments);
                 } catch (RedisException $e) {
                     if (Str::contains($e->getMessage(), 'went away')) {
                         $this->client = $this->createClient();
